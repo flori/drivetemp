@@ -1,0 +1,70 @@
+#!/usr/bin/env ruby
+
+def scan_for(cmd, pattern)
+  `#{cmd}`.each { |l| m = l.match(pattern) and return m.captures }
+  nil
+end
+
+def fetch_drives
+  drives = Dir[ENV['drives'] || '']
+  drives = drives.inject({}) do |h, d|
+    real_name = File.symlink?(d) ? File.readlink(d) : d
+    real_name = File.expand_path(File.basename(real_name), '/dev')
+    if real_name !~ /\d\Z/
+      h[d] = real_name
+    end
+    h
+  end
+  seen = {}
+  for (df, dt) in drives.sort
+    seen[dt] and drives.delete df
+    seen[dt] = true
+  end
+  drives.sort_by { |_, dt| dt }
+end
+
+def find_executable(name)
+  path = (ENV[name] || `which #{name}`).chomp
+  case
+  when path.strip.empty?
+    fail "couldn't find #{name} exectuable"
+  when !File.executable?(path)
+    fail "#{path.inspect} isn't an executable"
+  end
+  path
+end
+
+def scan_for_temperatures
+  for (df, dt) in $drives
+    if a = scan_for(
+        "#$smartctl --all #{dt} -d sat --nocheck=standby",
+        /\sTemperature_Celsius\s.*?(\d+)\s+(?:\(.*\))?\Z/)
+    then
+      temperature = a.first
+      yield df, dt, temperature
+    end
+  end
+end
+
+$smartctl = find_executable('smartctl')
+$drives = fetch_drives
+
+case ARGV.first
+when 'autoconf'
+  puts 'yes'
+when 'config'
+  puts 'graph_title Drive temperature'
+  puts 'graph_args --base 1000 -l 0'
+  puts 'graph_vlabel temp in °C'
+  puts 'graph_category sensors'
+  puts 'graph_info This graph shows the temperature in degrees Celsius of the hard drives in the machine.'
+  scan_for_temperatures do |df, dt, temperature|
+    df = File.basename(df)
+    puts "#{df}.label #{df}"
+  end
+else
+  scan_for_temperatures do |df, dt, temperature|
+    df = File.basename(df)
+    puts "#{df}.value #{temperature}"
+  end
+end
