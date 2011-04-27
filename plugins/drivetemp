@@ -1,6 +1,15 @@
 #!/usr/bin/env ruby
 
+# Example config:
+#[drivetemp]
+#user root
+#env.drives /dev/disk/by-id/*
+#env.smartctl_args_usb_TrekStor_DS_maxi_g_u_200812220790 -d sat
+#env.smartctl_args --nocheck=standby
+
+
 def scan_for(cmd, pattern)
+  ENV['debug'].to_i == 1 and warn cmd
   `#{cmd}`.each { |l| m = l.match(pattern) and return m.captures }
   nil
 end
@@ -34,10 +43,28 @@ def find_executable(name)
   path
 end
 
+def grep_args_for(device)
+  ENV.each do |key, value|
+    if key =~ /\Asmartctl_args_(.+)/
+      device_prefix = $1
+      device_prefix.tr!('^a-zA-Z0-9', '_')
+      device_match = File.basename(device).tr('^a-zA-Z0-9', '_')
+      device_match =~ /\A#{device_prefix}/ and return value
+    end
+  end
+  nil
+end
+
 def scan_for_temperatures
+  smartctl_args = ENV['smartctl_args'] || ''
   for (df, dt) in $drives
+    args = if smartctl_drive_args = grep_args_for(df)
+             smartctl_args + " #{smartctl_drive_args}"
+           else
+             smartctl_args
+           end
     if a = scan_for(
-        "#$smartctl --all #{dt} -d sat --nocheck=standby",
+        "#$smartctl --all #{dt} #{args}",
         /\sTemperature_Celsius\s.*?(\d+)\s+(?:\(.*\))?\Z/)
     then
       temperature = a.first
@@ -60,11 +87,11 @@ when 'config'
   puts 'graph_info This graph shows the temperature in degrees Celsius of the hard drives in the machine.'
   scan_for_temperatures do |df, dt, temperature|
     df, dt = File.basename(df), File.basename(dt)
-    puts "#{df}.label #{dt}"
+    puts "#{df.tr('.', '_')}.label #{dt}"
   end
 else
   scan_for_temperatures do |df, dt, temperature|
     df = File.basename(df)
-    puts "#{df}.value #{temperature}"
+    puts "#{df.tr('.', '_')}.value #{temperature}"
   end
 end
