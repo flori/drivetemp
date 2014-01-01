@@ -15,7 +15,7 @@ def scan_for(cmd, pattern)
 end
 
 def fetch_drives
-  drives = Dir[ENV['drives'] || '']
+  drives = Dir[ENV['drives'] || '/dev/disk/by-id/*']
   drives = drives.inject({}) do |h, d|
     real_name = File.symlink?(d) ? File.readlink(d) : d
     real_name = File.expand_path(File.basename(real_name), '/dev')
@@ -77,8 +77,8 @@ $smartctl = find_executable('smartctl')
 $drives = fetch_drives
 
 case ARGV.first
-#when 'autoconf'
-#  puts 'yes'
+when 'autoconf'
+  puts 'yes'
 when 'config'
   puts 'graph_title Drive temperature'
   puts 'graph_args --base 1000 -l 0'
