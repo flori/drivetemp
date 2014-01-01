@@ -10,7 +10,7 @@
 
 def scan_for(cmd, pattern)
   ENV['debug'].to_i == 1 and warn cmd
-  `#{cmd}`.each { |l| m = l.match(pattern) and return m.captures }
+  `#{cmd}`.each_line { |l| m = l.match(pattern) and return m.captures }
   nil
 end
 
@@ -82,7 +82,7 @@ case ARGV.first
 when 'config'
   puts 'graph_title Drive temperature'
   puts 'graph_args --base 1000 -l 0'
-  puts 'graph_vlabel temp in °C'
+  puts "graph_vlabel temp in \u00B0C"
   puts 'graph_category sensors'
   puts 'graph_info This graph shows the temperature in degrees Celsius of the hard drives in the machine.'
   scan_for_temperatures do |df, dt, temperature|
