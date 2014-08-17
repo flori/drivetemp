@@ -7,7 +7,6 @@
 #env.smartctl_args_usb_TrekStor_DS_maxi_g_u_200812220790 -d sat
 #env.smartctl_args --nocheck=standby
 
-
 def scan_for(cmd, pattern)
   ENV['debug'].to_i == 1 and warn cmd
   `#{cmd}`.each_line { |l| m = l.match(pattern) and return m.captures }
@@ -78,7 +77,7 @@ $drives = fetch_drives
 
 case ARGV.first
 when 'autoconf'
-  puts 'yes'
+  puts 'no'
 when 'config'
   puts 'graph_title Drive temperature'
   puts 'graph_args --base 1000 -l 0'
