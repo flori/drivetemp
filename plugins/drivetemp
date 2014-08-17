@@ -64,7 +64,7 @@ def scan_for_temperatures
            end
     if a = scan_for(
         "#$smartctl --all #{dt} #{args}",
-        /\sTemperature_Celsius\s.*?(\d+)\s+(?:\(.*\))?\Z/)
+        /^194\s.*?(\d+)\s+(?:\(.*\))?\Z/) # 194 is Temperatur_Celsius
     then
       temperature = a.first
       yield df, dt, temperature
