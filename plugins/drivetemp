@@ -81,7 +81,7 @@ when 'autoconf'
 when 'config'
   puts 'graph_title Drive temperature'
   puts 'graph_args --base 1000 -l 0'
-  puts "graph_vlabel temp in \u00B0C"
+  puts "graph_vlabel temp in \xB0C"
   puts 'graph_category sensors'
   puts 'graph_info This graph shows the temperature in degrees Celsius of the hard drives in the machine.'
   scan_for_temperatures do |df, dt, temperature|
